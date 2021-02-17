@@ -24,8 +24,7 @@ RUN gradle -version > /dev/null \
 FROM adoptopenjdk:11-jre-hotspot
 
 ## Add user
-RUN addgroup -S jvm \
-    && adduser -S jvm -G jvm
+RUN adduser --disabled-password --gecos "" jvm
 
 COPY --from=build /app/build/libs/feedchime-all.jar /app/feedchime.jar
 
