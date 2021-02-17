@@ -1,4 +1,5 @@
 # feedchime
+
 🔔 Simple RSS feed notifier which supports Discord Webhook
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.4.30-blue)](https://kotlinlang.org)
@@ -9,6 +10,8 @@
 [![license](https://img.shields.io/github/license/SlashNephy/feedchime)](https://github.com/SlashNephy/feedchime/blob/master/LICENSE)
 [![issues](https://img.shields.io/github/issues/SlashNephy/feedchime)](https://github.com/SlashNephy/feedchime/issues)
 [![pull requests](https://img.shields.io/github/issues-pr/SlashNephy/feedchime)](https://github.com/SlashNephy/feedchime/pulls)
+
+[![screenshot.png](https://raw.githubusercontent.com/SlashNephy/feedchime/master/docs/screenshot.png)](https://github.com/SlashNephy/feedchime)
 
 ## Requirements
 
