@@ -13,7 +13,7 @@ object Versions {
     const val rssreader = "2.4.1"
     const val Jsoup = "1.13.1"
     const val Kord = "0.7.0-SNAPSHOT"
-    const val kaml = "0.27.0"
+    const val kaml = "0.28.3"
 
     const val Exposed = "0.29.1"
     const val SQLiteJDBC = "3.30.1"
