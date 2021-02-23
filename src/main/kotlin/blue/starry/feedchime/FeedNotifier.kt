@@ -1,14 +1,10 @@
 package blue.starry.feedchime
 
-import dev.kord.common.entity.DiscordEmbed
-import dev.kord.common.entity.optional.optional
+import com.rometools.rome.feed.synd.SyndEntry
+import com.rometools.rome.feed.synd.SyndFeed
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collectIndexed
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -18,7 +14,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.jsoup.Jsoup
-import java.time.ZonedDateTime
+import java.time.ZoneOffset
 
 object FeedNotifier {
     init {
@@ -37,89 +33,96 @@ object FeedNotifier {
         }.joinAll()
     }
 
-    private suspend fun checkEach(feed: Config.Feed) {
-        val lastGuid = transaction(FeedchimeDatabase) {
-            RssFeedHistories.select { RssFeedHistories.url eq feed.url }.firstOrNull()?.get(RssFeedHistories.guid)
+    private suspend fun checkEach(config: Config.Feed) {
+        val lastUri = transaction(FeedchimeDatabase) {
+            RssFeedHistories.select { RssFeedHistories.url eq config.url }.firstOrNull()?.get(RssFeedHistories.uri)
         }
-        var newGuid = ""
+        var newUri = ""
 
-        FeedParser.parse(feed.url)
-            // require title and guid field
-            .takeWhile { it.title.isPresent }
-            .takeWhile { it.guid.isPresent }
-            // check last guid
-            .takeWhile { it.guid.get() != lastGuid }
+        val feed = FeedParser.parse(config.url)
+        feed.entries.asSequence()
+            // require title and uri field
+            .filter { it.title != null }
+            .filter { it.uri != null }
+            // check last link
+            .takeWhile { it.uri != lastUri }
             // limit items
             .take(FeedchimeConfig.limit)
-            // transform to type-safe object
-            .map { item ->
-                FeedItem(
-                    title = item.title.get(),
-                    description = item.description.orElseGet { null },
-                    url = item.link.orElseGet { null },
-                    author = item.author.orElseGet { null },
-                    category = item.category.orElseGet { null },
-                    time = runCatching {
-                        item.pubDateZonedDateTime
-                    }.map { optional ->
-                        optional.orElseGet { null }
-                    }.recoverCatching {
-                        ZonedDateTime.parse(item.pubDate.get(), FeedItem.alternativeDateTimeFormat)
-                    }.getOrNull(),
-                    id = item.guid.get()
-                )
-            }
-            .collectIndexed { i, it ->
-                // only notify when lastGuid is present
-                if (lastGuid != null) {
-                    notify(it, feed)
+            .forEachIndexed { i, entry ->
+                logger.trace { entry }
+
+                // only notify when lastLink is present
+                if (lastUri != null) {
+                    notify(feed, entry, config)
                 }
 
-                // save first guid
+                // save first link
                 if (i == 0) {
-                    newGuid = it.id
+                    newUri = entry.uri
                 }
-
-                logger.trace { it }
             }
 
         // skip updating if new guid is null
-        if (newGuid.isEmpty()) {
+        if (newUri.isEmpty()) {
             return
         }
 
         transaction(FeedchimeDatabase) {
             // update if exists
-            if (lastGuid != null) {
-                RssFeedHistories.update({ RssFeedHistories.url eq feed.url }) {
-                    it[guid] = newGuid
+            if (lastUri != null) {
+                RssFeedHistories.update({ RssFeedHistories.url eq config.url }) {
+                    it[uri] = newUri
                 }
             // insert if not exists
             } else {
                 RssFeedHistories.insert {
-                    it[this.url] = feed.url
-                    it[guid] = newGuid
+                    it[url] = config.url
+                    it[uri] = newUri
                 }
             }
         }
     }
 
-    private suspend fun notify(item: FeedItem, feed: Config.Feed) {
-        if (feed.discordWebhookUrl != null) {
-            notifyToDiscordWebhook(item, feed.discordWebhookUrl)
+    private suspend fun notify(feed: SyndFeed, entry: SyndEntry, config: Config.Feed) {
+        if (config.discordWebhookUrl != null) {
+            notifyToDiscordWebhook(feed, entry, config.discordWebhookUrl)
         }
     }
 
-    private suspend fun notifyToDiscordWebhook(item: FeedItem, webhookUrl: String) {
+    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, webhookUrl: String) {
         FeedchimeHttpClient.post<Unit>(webhookUrl) {
             contentType(ContentType.Application.Json)
 
             body = DiscordWebhookMessage(
                 embeds = listOf(
                     DiscordEmbed(
-                        title = item.title.optional(),
-                        description = item.description?.let { Jsoup.parse(it).text() }.toOptionalAnyway(),
-                        url = item.url.toOptionalAnyway()
+                        title = entry.title,
+                        description = entry.contents.joinToString("\n") {
+                            if (it.type == "html") {
+                                Jsoup.parse(it.value).text()
+                            } else {
+                                it.value
+                            }
+                        },
+                        url = entry.link,
+                        author = entry.authors.firstOrNull()?.let {
+                            DiscordEmbed.Author(
+                                name = it.name,
+                                url = it.uri
+                            )
+                        },
+                        provider = DiscordEmbed.Provider(
+                            name = feed.title,
+                            url = feed.link
+                        ),
+                        thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
+                            DiscordEmbed.Thumbnail(
+                                url = it.getAttributeValue("url"),
+                                height = it.getAttributeValue("height")?.toIntOrNull(),
+                                width = it.getAttributeValue("width")?.toIntOrNull()
+                            )
+                        },
+                        timestamp = (entry.updatedDate ?: entry.publishedDate)?.toInstant()?.atOffset(ZoneOffset.UTC)?.toZonedDateTime()
                     )
                 )
             )
