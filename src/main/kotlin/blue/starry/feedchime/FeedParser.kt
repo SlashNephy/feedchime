@@ -1,21 +1,18 @@
 package blue.starry.feedchime
 
-import com.apptastic.rssreader.RssReader
+import com.rometools.rome.feed.synd.SyndFeed
+import com.rometools.rome.io.SyndFeedInput
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.utils.io.jvm.javaio.*
-import kotlinx.coroutines.flow.flow
+import org.xml.sax.InputSource
+import java.io.StringReader
 
 object FeedParser {
-    private val reader = RssReader()
+    private val input = SyndFeedInput()
 
-    suspend fun parse(url: String) = flow {
-        FeedchimeHttpClient.get<HttpStatement>(url).execute {
-            val stream = it.content.toInputStream()
+    suspend fun parse(url: String): SyndFeed {
+        val content = FeedchimeHttpClient.get<String>(url)
+        val source = InputSource(StringReader(content))
 
-            for (feed in reader.read(stream)) {
-                emit(feed)
-            }
-        }
+        return input.build(source)
     }
 }

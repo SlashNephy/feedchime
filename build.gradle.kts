@@ -10,10 +10,9 @@ plugins {
 
 object Versions {
     const val Ktor = "1.5.1"
-    const val rssreader = "2.4.1"
+    const val Rome = "1.15.0"
     const val Jsoup = "1.13.1"
-    const val Kord = "0.7.0-SNAPSHOT"
-    const val kaml = "0.27.0"
+    const val kaml = "0.28.3"
 
     const val Exposed = "0.29.1"
     const val SQLiteJDBC = "3.30.1"
@@ -28,9 +27,8 @@ object Versions {
 object Libraries {
     const val KtorClientCIO = "io.ktor:ktor-client-cio:${Versions.Ktor}"
     const val KtorClientSerialization = "io.ktor:ktor-client-serialization:${Versions.Ktor}"
-    const val rssreader = "com.apptastic:rssreader:${Versions.rssreader}"
+    const val Rome = "com.rometools:rome:${Versions.Rome}"
     const val Jsoup = "org.jsoup:jsoup:${Versions.Jsoup}"
-    const val Kord = "dev.kord:kord-core:${Versions.Kord}"
     const val kaml = "com.charleskorn.kaml:kaml:${Versions.kaml}"
 
     const val ExposedCore = "org.jetbrains.exposed:exposed-core:${Versions.Exposed}"
@@ -56,19 +54,15 @@ object Libraries {
 repositories {
     mavenCentral()
 
-    // for rssreader, should be removed by May 1, 2021.
+    // for exposed
     jcenter()
-
-    // for Kord
-    maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
 }
 
 dependencies {
     implementation(Libraries.KtorClientCIO)
     implementation(Libraries.KtorClientSerialization)
-    implementation(Libraries.rssreader)
+    implementation(Libraries.Rome)
     implementation(Libraries.Jsoup)
-    implementation(Libraries.Kord)
     implementation(Libraries.kaml)
 
     implementation(Libraries.ExposedCore)
@@ -90,7 +84,7 @@ kotlin {
     target {
         compilations.all {
             kotlinOptions {
-                jvmTarget = JavaVersion.VERSION_11.toString()
+                jvmTarget = JavaVersion.VERSION_1_8.toString()
                 apiVersion = "1.4"
                 languageVersion = "1.4"
                 allWarningsAsErrors = true
