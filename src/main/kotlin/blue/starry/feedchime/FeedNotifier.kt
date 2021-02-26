@@ -96,7 +96,13 @@ object FeedNotifier {
             body = DiscordWebhookMessage(
                 embeds = listOf(
                     DiscordEmbed(
-                        title = entry.title,
+                        title = entry.titleEx.let {
+                            if (it.type == "html") {
+                                Jsoup.parse(it.value).text()
+                            } else {
+                                it.value
+                            }
+                        },
                         description = entry.contents.plus(entry.description).filterNotNull().joinToString("\n") {
                             if (it.type == "html") {
                                 Jsoup.parse(it.value).text()
