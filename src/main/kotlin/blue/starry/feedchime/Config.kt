@@ -16,7 +16,8 @@ data class Config(
     @Serializable
     data class Feed(
         val url: String,
-        val discordWebhookUrl: String? = null
+        val discordWebhookUrl: String? = null,
+        val ignoreTitles: List<String> = emptyList()
     )
 
     companion object {

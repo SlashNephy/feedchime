@@ -51,18 +51,18 @@ object FeedNotifier {
             .forEachIndexed { i, entry ->
                 logger.trace { entry }
 
-                // only notify when lastLink is present
-                if (lastUri != null) {
+                // only notify when lastLink is present and title is not ignored
+                if (lastUri != null && config.ignoreTitles.none { it in entry.title }) {
                     notify(feed, entry, config)
                 }
 
-                // save first link
+                // save first uri
                 if (i == 0) {
                     newUri = entry.uri
                 }
             }
 
-        // skip updating if new guid is null
+        // skip updating if new uri is null
         if (newUri.isEmpty()) {
             return
         }
