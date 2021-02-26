@@ -97,7 +97,7 @@ object FeedNotifier {
                 embeds = listOf(
                     DiscordEmbed(
                         title = entry.title,
-                        description = entry.contents.joinToString("\n") {
+                        description = entry.contents.plus(entry.description).filterNotNull().joinToString("\n") {
                             if (it.type == "html") {
                                 Jsoup.parse(it.value).text()
                             } else {
