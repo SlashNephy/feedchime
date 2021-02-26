@@ -117,9 +117,9 @@ object FeedNotifier {
                                 url = it.uri
                             )
                         },
-                        provider = DiscordEmbed.Provider(
-                            name = feed.title,
-                            url = feed.link
+                        footer = DiscordEmbed.Footer(
+                            text = feed.title,
+                            iconUrl = feed.image?.url
                         ),
                         thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
                             DiscordEmbed.Thumbnail(
