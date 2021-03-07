@@ -15,7 +15,7 @@
 
 ## Requirements
 
-- Java 11 or later
+- Java 8 or later
 
 ## Get Started
 
