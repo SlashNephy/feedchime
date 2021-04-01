@@ -15,7 +15,7 @@
 
 ## Requirements
 
-- Java 11 or later
+- Java 8 or later
 
 ## Get Started
 
@@ -36,6 +36,13 @@ feeds:
   - url: 'https://www.publickey1.jp/atom.xml'
     # Discord Webhook URL
     discordWebhookUrl: 'https://discord.com/api/webhooks/xxx/xxx'
+    filter:
+      # 含めるタイトル (部分一致)
+      titles:
+        - 'Docker'
+      # 無視するタイトル (部分一致)
+      ignoreTitles:
+        - '[PR]'
 ```
 
 ### Docker

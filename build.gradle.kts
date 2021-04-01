@@ -9,7 +9,7 @@ plugins {
 }
 
 object Versions {
-    const val Ktor = "1.5.1"
+    const val Ktor = "1.5.2"
     const val Rome = "1.15.0"
     const val Jsoup = "1.13.1"
     const val kaml = "0.28.3"

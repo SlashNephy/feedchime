@@ -51,18 +51,21 @@ object FeedNotifier {
             .forEachIndexed { i, entry ->
                 logger.trace { entry }
 
-                // only notify when lastLink is present
-                if (lastUri != null) {
+                // only notify when lastLink is present and check filter
+                if (lastUri != null
+                    && config.filter.titles.any { it in entry.title }
+                    && config.filter.ignoreTitles.none { it in entry.title }
+                ) {
                     notify(feed, entry, config)
                 }
 
-                // save first link
+                // save first uri
                 if (i == 0) {
                     newUri = entry.uri
                 }
             }
 
-        // skip updating if new guid is null
+        // skip updating if new uri is null
         if (newUri.isEmpty()) {
             return
         }
@@ -96,8 +99,14 @@ object FeedNotifier {
             body = DiscordWebhookMessage(
                 embeds = listOf(
                     DiscordEmbed(
-                        title = entry.title,
-                        description = entry.contents.joinToString("\n") {
+                        title = entry.titleEx.let {
+                            if (it.type == "html") {
+                                Jsoup.parse(it.value).text()
+                            } else {
+                                it.value
+                            }
+                        },
+                        description = entry.contents.plus(entry.description).filterNotNull().joinToString("\n") {
                             if (it.type == "html") {
                                 Jsoup.parse(it.value).text()
                             } else {
@@ -111,9 +120,9 @@ object FeedNotifier {
                                 url = it.uri
                             )
                         },
-                        provider = DiscordEmbed.Provider(
-                            name = feed.title,
-                            url = feed.link
+                        footer = DiscordEmbed.Footer(
+                            text = feed.title,
+                            iconUrl = feed.image?.url
                         ),
                         thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
                             DiscordEmbed.Thumbnail(
