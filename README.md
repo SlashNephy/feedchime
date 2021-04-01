@@ -36,9 +36,13 @@ feeds:
   - url: 'https://www.publickey1.jp/atom.xml'
     # Discord Webhook URL
     discordWebhookUrl: 'https://discord.com/api/webhooks/xxx/xxx'
-    # 無視するタイトル (部分一致)
-    ignoreTitles:
-      - '[PR]'
+    filter:
+      # 含めるタイトル (部分一致)
+      titles:
+        - 'Docker'
+      # 無視するタイトル (部分一致)
+      ignoreTitles:
+        - '[PR]'
 ```
 
 ### Docker

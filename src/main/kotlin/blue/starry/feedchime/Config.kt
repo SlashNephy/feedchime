@@ -17,6 +17,12 @@ data class Config(
     data class Feed(
         val url: String,
         val discordWebhookUrl: String? = null,
+        val filter: Filter = Filter()
+    )
+
+    @Serializable
+    data class Filter(
+        val titles: List<String> = emptyList(),
         val ignoreTitles: List<String> = emptyList()
     )
 

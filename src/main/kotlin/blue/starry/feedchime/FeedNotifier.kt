@@ -51,8 +51,11 @@ object FeedNotifier {
             .forEachIndexed { i, entry ->
                 logger.trace { entry }
 
-                // only notify when lastLink is present and title is not ignored
-                if (lastUri != null && config.ignoreTitles.none { it in entry.title }) {
+                // only notify when lastLink is present and check filter
+                if (lastUri != null
+                    && config.filter.titles.any { it in entry.title }
+                    && config.filter.ignoreTitles.none { it in entry.title }
+                ) {
                     notify(feed, entry, config)
                 }
 
