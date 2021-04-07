@@ -20,6 +20,8 @@ val FeedchimeHttpClient by lazy {
         defaultRequest {
             userAgent(FeedchimeConfig.userAgent)
         }
+
+        followRedirects = true
     }
 }
 
