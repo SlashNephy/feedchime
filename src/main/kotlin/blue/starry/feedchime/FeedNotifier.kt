@@ -26,11 +26,9 @@ object FeedNotifier {
     private val logger = KotlinLogging.createFeedchimeLogger("feedchime.notifier")
 
     suspend fun check(feeds: List<Config.Feed>) = coroutineScope {
-        feeds.map {
-            launch {
-                checkEach(it)
-            }
-        }.joinAll()
+        for (it in feeds) {
+            checkEach(it)
+        }
     }
 
     private suspend fun checkEach(config: Config.Feed) {
