@@ -7,10 +7,12 @@ import org.xml.sax.InputSource
 import java.io.StringReader
 
 object FeedParser {
+    private val input = SyndFeedInput()
+
     suspend fun parse(url: String): SyndFeed {
         val content = FeedchimeHttpClient.get<String>(url)
         val source = InputSource(StringReader(content))
 
-        return SyndFeedInput().build(source)
+        return input.build(source)
     }
 }
