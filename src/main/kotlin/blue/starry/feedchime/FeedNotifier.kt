@@ -39,7 +39,13 @@ object FeedNotifier {
         }
         var newUri = ""
 
-        val feed = FeedParser.parse(config.url)
+        val feed = try {
+            FeedParser.parse(config.url)
+        } catch (e: Throwable) {
+            logger.error(e) { "Failed to parse feed ($config)" }
+            return
+        }
+
         feed.entries.asSequence()
             // require title and uri field
             .filter { it.title != null }
