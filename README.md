@@ -27,6 +27,8 @@
 interval: 3600
 # 一度のチェックで通知する最大数
 limit: 1
+# User-Agent
+# userAgent: xxx
 # ログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE, ALL)
 logLevel: 'TRACE'
 

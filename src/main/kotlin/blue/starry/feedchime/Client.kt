@@ -18,7 +18,7 @@ val FeedchimeHttpClient by lazy {
         }
 
         defaultRequest {
-            userAgent("feedchime (+https://github.com/SlashNephy/feedchime)")
+            userAgent(FeedchimeConfig.userAgent)
         }
     }
 }

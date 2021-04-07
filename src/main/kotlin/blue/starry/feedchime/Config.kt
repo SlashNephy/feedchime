@@ -11,6 +11,7 @@ data class Config(
     val interval: Int = 3600,
     val limit: Int = 1,
     val logLevel: String? = null,
+    val userAgent: String = "feedchime (+https://github.com/SlashNephy/feedchime)",
     val feeds: List<Feed> = emptyList()
 ) {
     @Serializable
