@@ -51,7 +51,7 @@ object FeedNotifier {
 
                 // only notify when lastLink is present and check filter
                 if (lastUri != null
-                    && config.filter.titles.any { it in entry.title }
+                    && config.filter.titles.none { it !in entry.title }
                     && config.filter.ignoreTitles.none { it in entry.title }
                 ) {
                     notify(feed, entry, config)
