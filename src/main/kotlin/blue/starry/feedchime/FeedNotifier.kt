@@ -113,11 +113,7 @@ object FeedNotifier {
                             }
                         },
                         description = entry.contents.plus(entry.description).filterNotNull().joinToString("\n") {
-                            if (it.type == "html") {
-                                Jsoup.parse(it.value).text()
-                            } else {
-                                it.value
-                            }
+                            Jsoup.parse(it.value).text()
                         },
                         url = entry.link,
                         author = entry.authors.firstOrNull()?.let {
