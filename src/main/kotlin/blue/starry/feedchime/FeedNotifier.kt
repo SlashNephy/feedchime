@@ -4,6 +4,7 @@ import com.rometools.rome.feed.synd.SyndEntry
 import com.rometools.rome.feed.synd.SyndFeed
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -41,6 +42,8 @@ object FeedNotifier {
 
         val feed = try {
             FeedParser.parse(config.url)
+        } catch (e: CancellationException) {
+            return
         } catch (e: Throwable) {
             logger.error(e) { "Failed to parse feed ($config)" }
             return
