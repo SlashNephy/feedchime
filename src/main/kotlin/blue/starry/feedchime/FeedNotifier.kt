@@ -2,6 +2,7 @@ package blue.starry.feedchime
 
 import com.rometools.rome.feed.synd.SyndEntry
 import com.rometools.rome.feed.synd.SyndFeed
+import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.CancellationException
@@ -97,7 +98,11 @@ object FeedNotifier {
 
     private suspend fun notify(feed: SyndFeed, entry: SyndEntry, config: Config.Feed) {
         if (config.discordWebhookUrl != null) {
-            notifyToDiscordWebhook(feed, entry, config.discordWebhookUrl)
+            try {
+                notifyToDiscordWebhook(feed, entry, config.discordWebhookUrl)
+            } catch (e: ClientRequestException) {
+                logger.error(e) { "Failed to send webhook. ($config)\nEntry = $entry" }
+            }
         }
     }
 
