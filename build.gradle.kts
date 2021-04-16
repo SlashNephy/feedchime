@@ -33,7 +33,6 @@ object Libraries {
 
     const val ExposedCore = "org.jetbrains.exposed:exposed-core:${Versions.Exposed}"
     const val ExposedJDBC = "org.jetbrains.exposed:exposed-jdbc:${Versions.Exposed}"
-    const val ExposedJavaTime = "org.jetbrains.exposed:exposed-java-time:${Versions.Exposed}"
     const val SqliteJDBC = "org.xerial:sqlite-jdbc:${Versions.SQLiteJDBC}"
 
     const val KotlinLogging = "io.github.microutils:kotlin-logging:${Versions.KotlinLogging}"
@@ -67,7 +66,6 @@ dependencies {
 
     implementation(Libraries.ExposedCore)
     implementation(Libraries.ExposedJDBC)
-    implementation(Libraries.ExposedJavaTime)
     implementation(Libraries.SqliteJDBC)
 
     implementation(Libraries.KotlinLogging)

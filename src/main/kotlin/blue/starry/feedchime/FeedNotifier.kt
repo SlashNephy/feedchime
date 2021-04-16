@@ -2,9 +2,10 @@ package blue.starry.feedchime
 
 import com.rometools.rome.feed.synd.SyndEntry
 import com.rometools.rome.feed.synd.SyndFeed
-import io.ktor.client.features.*
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.features.ClientRequestException
+import io.ktor.client.request.post
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.joinAll
@@ -36,11 +37,14 @@ object FeedNotifier {
     }
 
     private suspend fun checkEach(config: Config.Feed) {
-        val lastUri = transaction(FeedchimeDatabase) {
-            RssFeedHistories.select { RssFeedHistories.url eq config.url }.firstOrNull()?.get(RssFeedHistories.uri)
+        val (lastArticleUrl, lastArticleTime) = transaction(FeedchimeDatabase) {
+            RssFeedHistories.select { RssFeedHistories.feedUrl eq config.url }.firstOrNull().let {
+                it?.get(RssFeedHistories.articleUrl) to it?.get(RssFeedHistories.articleTime)
+            }
         }
-        var newUri = ""
-
+        var newArticleUrl: String? = null
+        var newArticleTime: Long? = null
+        
         val feed = try {
             FeedParser.parse(config.url)
         } catch (e: CancellationException) {
@@ -54,43 +58,47 @@ object FeedNotifier {
             // require title and uri field
             .filter { it.title != null }
             .filter { it.uri != null }
-            // check last link
-            .takeWhile { it.uri != lastUri }
+            // check lastArticleUrl, newArticleTime
+            .takeWhile { lastArticleUrl == null || it.uri != lastArticleUrl }
+            .takeWhile { lastArticleTime == null || it.publishedDate.time > lastArticleTime }
             // limit items
             .take(FeedchimeConfig.limit)
             .forEachIndexed { i, entry ->
                 logger.trace { entry }
 
-                // only notify when lastLink is present and check filter
-                if (lastUri != null
+                // only notify when lastArticleUrl is present, and check filter
+                if (lastArticleUrl != null
                     && config.filter.titles.none { it !in entry.title }
                     && config.filter.ignoreTitles.none { it in entry.title }
                 ) {
                     notify(feed, entry, config)
                 }
 
-                // save first uri
+                // save as newArticleUrl, newArticleTime
                 if (i == 0) {
-                    newUri = entry.uri
+                    newArticleUrl = entry.uri
+                    newArticleTime = entry.publishedDate?.time
                 }
             }
 
-        // skip updating if new uri is null
-        if (newUri.isEmpty()) {
+        // skip updating if newArticleUrl or newArticleTime is default
+        if (newArticleUrl.isNullOrEmpty() || newArticleTime == null) {
             return
         }
 
         transaction(FeedchimeDatabase) {
             // update if exists
-            if (lastUri != null) {
-                RssFeedHistories.update({ RssFeedHistories.url eq config.url }) {
-                    it[uri] = newUri
+            if (lastArticleUrl != null) {
+                RssFeedHistories.update({ RssFeedHistories.feedUrl eq config.url }) {
+                    it[articleUrl] = newArticleUrl!!
+                    it[articleTime] = newArticleTime!!
                 }
             // insert if not exists
             } else {
                 RssFeedHistories.insert {
-                    it[url] = config.url
-                    it[uri] = newUri
+                    it[feedUrl] = config.url
+                    it[articleUrl] = newArticleUrl!!
+                    it[articleTime] = newArticleTime!!
                 }
             }
         }
