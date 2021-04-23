@@ -52,12 +52,12 @@ object HtmlParser {
         val sizesRegex = "^(\\d+)x(\\d)$".toRegex()
         
         val icon = select("link[rel=\"apple-touch-icon\"]").maxByOrNull { 
-            val sizes = it.attr("sizes") ?: return null
-            val match = sizesRegex.matchEntire(sizes) ?: return null
+            val sizes = it.attr("sizes") ?: return@maxByOrNull 0
+            val match = sizesRegex.matchEntire(sizes) ?: return@maxByOrNull 0
             
             val (a, b) = match.groupValues.map { s -> s.toInt() }
             a * b
-        } ?: return null
+        } ?: selectFirst("link[rel=\"apple-touch-icon-precomposed\"]") ?: return null
         
         return icon.attr("href")
     }
