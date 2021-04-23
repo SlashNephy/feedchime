@@ -140,10 +140,6 @@ object FeedNotifier {
                                 url = it.uri
                             )
                         },
-                        footer = DiscordEmbed.Footer(
-                            text = feed.title,
-                            iconUrl = feed.image?.url
-                        ),
                         thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
                             DiscordEmbed.Thumbnail(
                                 url = it.getAttributeValue("url"),
