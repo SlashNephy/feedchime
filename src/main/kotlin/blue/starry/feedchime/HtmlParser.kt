@@ -27,7 +27,7 @@ object HtmlParser {
                 it.selectFirst("meta[property=\"og:description\"]")
                     ?: it.selectFirst("meta[name=\"twitter:description\"]")
                     ?: it.selectFirst("meta[name=\"description\"]")
-            }?.attr("content")?.resolveRelativeUrl(url)
+            }?.attr("content")
         )
     }
     
