@@ -137,6 +137,14 @@ object FeedNotifier {
                         }.ifBlank {
                             meta?.description
                         },
+                        fields = buildList { 
+                            if (entry.categories.isNotEmpty()) {
+                                this += DiscordEmbed.Field(
+                                    name = "カテゴリ",
+                                    value = entry.categories.joinToString(", ") { it.name }
+                                )
+                            }
+                        },
                         url = entry.link,
                         author = entry.authors.firstOrNull()?.let {
                             DiscordEmbed.Author(
