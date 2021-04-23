@@ -16,6 +16,7 @@ object HtmlParser {
         return Result(
             thumbnailUrl = head.let {
                 it.selectFirst("meta[property=\"og:image\"]")
+                    ?: it.selectFirst("meta[name=\"twitter:image:src\"]")
                     ?: it.selectFirst("meta[name=\"twitter:image\"]")
                     ?: it.selectFirst("meta[name=\"thumbnail\"]")
             }?.attr("content")?.resolveRelativeUrl(url),
