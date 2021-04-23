@@ -32,19 +32,26 @@ limit: 1
 # ログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE, ALL)
 logLevel: 'TRACE'
 
-# チェックするフィード定義のリスト
-feeds:
-    # フィード URL
-  - url: 'https://www.publickey1.jp/atom.xml'
-    # Discord Webhook URL
-    discordWebhookUrl: 'https://discord.com/api/webhooks/xxx/xxx'
-    filter:
-      # 含めるタイトル (部分一致)
-      titles:
-        - 'Docker'
-      # 無視するタイトル (部分一致)
-      ignoreTitles:
-        - '[PR]'
+# 通知チャンネル定義のリスト
+channels:
+    #  Discord Webhook URL
+  - discordWebhookUrl: 'https://discord.com/api/webhooks/xxx/xxx'
+    # チェックするフィード定義のリスト
+    feeds:
+        # フィード URL
+      - url: 'https://www.publickey1.jp/atom.xml'
+        # Webhook のユーザ名
+        name: 'PublicKey'
+        # Webhook のアバター URL
+        avatarUrl: 'https://www.publickey1.jp/favicon.ico'
+        # フィルター定義
+        filter:
+          # 含めるタイトル (部分一致)
+          titles:
+            - 'Docker'
+          # 無視するタイトル (部分一致)
+          ignoreTitles:
+            - '[PR]'
 ```
 
 ### Docker

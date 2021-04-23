@@ -1,6 +1,7 @@
 package blue.starry.feedchime
 
 import com.charleskorn.kaml.Yaml
+import com.rometools.rome.feed.atom.Feed
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import java.nio.file.Paths
@@ -12,12 +13,19 @@ data class Config(
     val limit: Int = 1,
     val logLevel: String? = null,
     val userAgent: String = "feedchime (+https://github.com/SlashNephy/feedchime)",
-    val feeds: List<Feed> = emptyList()
+    val channels: List<Channel>
 ) {
+    @Serializable
+    data class Channel(
+        val feeds: List<Feed>,
+        val discordWebhookUrl: String
+    )
+
     @Serializable
     data class Feed(
         val url: String,
-        val discordWebhookUrl: String? = null,
+        val name: String? = null,
+        val avatarUrl: String? = null,
         val filter: Filter = Filter()
     )
 

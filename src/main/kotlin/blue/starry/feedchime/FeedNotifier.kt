@@ -28,15 +28,17 @@ object FeedNotifier {
 
     private val logger = KotlinLogging.createFeedchimeLogger("feedchime.notifier")
 
-    suspend fun check(feeds: List<Config.Feed>) = coroutineScope {
-        feeds.map {
+    suspend fun check(channels: List<Config.Channel>) = coroutineScope {
+        channels.flatMap { channel ->
+            channel.feeds.map { channel to it } 
+        }.map { (channel, feed) ->
             launch {
-                checkEach(it)
+                checkEach(channel, feed)
             }
         }.joinAll()
     }
 
-    private suspend fun checkEach(config: Config.Feed) {
+    private suspend fun checkEach(channel: Config.Channel, config: Config.Feed) {
         val (lastArticleUrl, lastArticleTime) = transaction(FeedchimeDatabase) {
             RssFeedHistories.select { RssFeedHistories.feedUrl eq config.url }.firstOrNull().let {
                 it?.get(RssFeedHistories.articleUrl) to it?.get(RssFeedHistories.articleTime)
@@ -71,7 +73,7 @@ object FeedNotifier {
                     && config.filter.titles.none { it !in entry.title }
                     && config.filter.ignoreTitles.none { it in entry.title }
                 ) {
-                    notify(feed, entry, config)
+                    notify(feed, entry, channel, config)
                 }
 
                 // save as newArticleUrl, newArticleTime
@@ -104,21 +106,21 @@ object FeedNotifier {
         }
     }
 
-    private suspend fun notify(feed: SyndFeed, entry: SyndEntry, config: Config.Feed) {
-        if (config.discordWebhookUrl != null) {
-            try {
-                notifyToDiscordWebhook(feed, entry, config.discordWebhookUrl)
-            } catch (e: ClientRequestException) {
-                logger.error(e) { "Failed to send webhook. ($config)\nEntry = $entry" }
-            }
+    private suspend fun notify(feed: SyndFeed, entry: SyndEntry, channel: Config.Channel, config: Config.Feed) {
+        try {
+            notifyToDiscordWebhook(feed, entry, channel.discordWebhookUrl, config.name, config.avatarUrl)
+        } catch (e: ClientRequestException) {
+            logger.error(e) { "Failed to send webhook. ($config)\nEntry = $entry" }
         }
     }
 
-    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, webhookUrl: String) {
+    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, webhookUrl: String, name: String?, avatarUrl: String?) {
         FeedchimeHttpClient.post<Unit>(webhookUrl) {
             contentType(ContentType.Application.Json)
 
             body = DiscordWebhookMessage(
+                username = name ?: feed.title,
+                avatarUrl = avatarUrl ?: feed.image?.url,
                 embeds = listOf(
                     DiscordEmbed(
                         title = entry.titleEx.let {

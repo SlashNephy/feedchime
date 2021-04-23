@@ -8,12 +8,7 @@ private val logger = KotlinLogging.createFeedchimeLogger("feedchime")
 
 suspend fun main() {
     logger.info { "Application started!" }
-
-    val feeds = FeedchimeConfig.feeds
-    require(feeds.isNotEmpty()) {
-        "No feeds available. Exit..."
-    }
-
+    
     require(FeedchimeConfig.interval >= 10) {
         "Too short interval passed. Please set it to 10 or greater value."
     }
@@ -23,7 +18,7 @@ suspend fun main() {
     }
 
     while (true) {
-        FeedNotifier.check(feeds)
+        FeedNotifier.check(FeedchimeConfig.channels)
 
         logger.trace { "Sleep ${FeedchimeConfig.interval.seconds}." }
         delay(FeedchimeConfig.interval.seconds)
