@@ -132,7 +132,7 @@ object FeedNotifier {
                                 it.value
                             }
                         },
-                        description = entry.contents.plus(entry.description).filterNotNull().joinToString("\n") {
+                        description = listOf(entry.description).plus(entry.contents).filterNotNull().joinToString("\n") {
                             Jsoup.parse(it.value).text()
                         }.ifBlank {
                             meta?.description
