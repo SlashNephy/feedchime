@@ -107,20 +107,22 @@ object FeedNotifier {
     }
 
     private suspend fun notify(feed: SyndFeed, entry: SyndEntry, channel: Config.Channel, config: Config.Feed) {
+        val meta = HtmlParser.parse(feed.link)
+        
         try {
-            notifyToDiscordWebhook(feed, entry, channel.discordWebhookUrl, config.name, config.avatarUrl)
+            notifyToDiscordWebhook(feed, entry, meta, channel.discordWebhookUrl, config.name, config.avatarUrl)
         } catch (e: ClientRequestException) {
             logger.error(e) { "Failed to send webhook. ($config)\nEntry = $entry" }
         }
     }
 
-    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, webhookUrl: String, name: String?, avatarUrl: String?) {
+    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, meta: HtmlParser.Result?, webhookUrl: String, name: String?, avatarUrl: String?) {
         FeedchimeHttpClient.post<Unit>(webhookUrl) {
             contentType(ContentType.Application.Json)
 
             body = DiscordWebhookMessage(
                 username = name ?: feed.title,
-                avatarUrl = avatarUrl ?: feed.image?.url,
+                avatarUrl = avatarUrl ?: feed.image?.url ?: meta?.faviconUrl,
                 embeds = listOf(
                     DiscordEmbed(
                         title = entry.titleEx.let {
@@ -132,12 +134,19 @@ object FeedNotifier {
                         },
                         description = entry.contents.plus(entry.description).filterNotNull().joinToString("\n") {
                             Jsoup.parse(it.value).text()
+                        }.ifBlank {
+                            meta?.description
                         },
                         url = entry.link,
                         author = entry.authors.firstOrNull()?.let {
                             DiscordEmbed.Author(
                                 name = it.name,
                                 url = it.uri
+                            )
+                        },
+                        image = meta?.thumbnailUrl?.let {
+                            DiscordEmbed.Image(
+                                url = it
                             )
                         },
                         thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
