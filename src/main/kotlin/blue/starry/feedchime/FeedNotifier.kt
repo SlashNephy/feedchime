@@ -107,7 +107,7 @@ object FeedNotifier {
     }
 
     private suspend fun notify(feed: SyndFeed, entry: SyndEntry, channel: Config.Channel, config: Config.Feed) {
-        val meta = HtmlParser.parse(feed.link)
+        val meta = HtmlParser.parse(entry.link)
         
         try {
             notifyToDiscordWebhook(feed, entry, meta, channel.discordWebhookUrl, config.name, config.avatarUrl)
