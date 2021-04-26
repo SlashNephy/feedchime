@@ -12,7 +12,7 @@ object HtmlParser {
         }.getOrNull() ?: return null
         val document = Jsoup.parse(html)
         val head = document.head() ?: return null
-        
+
         return Result(
             thumbnailUrl = head.let {
                 it.selectFirst("meta[property=\"og:image\"]")
@@ -22,6 +22,8 @@ object HtmlParser {
             }?.attr("content")?.resolveRelativeUrl(url),
             faviconUrl = head.let {
                 it.extractFaviconUrl()
+                    ?: it.selectFirst("link[rel=\"icon\"]")?.attr("href")
+                    ?: it.selectFirst("link[rel=\"shortcut icon\"]")?.attr("href")
                     ?: "/favicon.ico"
             }.resolveRelativeUrl(url),
             description = head.let {
@@ -31,7 +33,7 @@ object HtmlParser {
             }?.attr("content")
         )
     }
-    
+
     private fun String.resolveRelativeUrl(htmlUrl: String): String {
         return when {
             startsWith("https://") || startsWith("http://") -> {

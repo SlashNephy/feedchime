@@ -126,15 +126,11 @@ object FeedNotifier {
                 embeds = listOf(
                     DiscordEmbed(
                         title = entry.titleEx.let {
-                            if (it.type == "html") {
-                                Jsoup.parse(it.value).text()
-                            } else {
-                                it.value
-                            }
-                        },
-                        description = listOf(entry.description).plus(entry.contents).filterNotNull().joinToString("\n") {
                             Jsoup.parse(it.value).text()
-                        }.ifBlank {
+                        },
+                        description = entry.description?.let {
+                            Jsoup.parse(it.value).text()
+                        }.orEmpty().ifBlank {
                             meta?.description
                         },
                         fields = buildList { 
