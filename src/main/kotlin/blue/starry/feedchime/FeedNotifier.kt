@@ -30,7 +30,7 @@ object FeedNotifier {
 
     suspend fun check(channels: List<Config.Channel>) = coroutineScope {
         channels.flatMap { channel ->
-            channel.feeds.map { channel to it } 
+            channel.feeds.map { channel to it }
         }.map { (channel, feed) ->
             launch {
                 checkEach(channel, feed)
@@ -46,7 +46,7 @@ object FeedNotifier {
         }
         var newArticleUrl: String? = null
         var newArticleTime: Long? = null
-        
+
         val feed = try {
             FeedParser.parse(config.url)
         } catch (e: CancellationException) {
@@ -108,7 +108,7 @@ object FeedNotifier {
 
     private suspend fun notify(feed: SyndFeed, entry: SyndEntry, channel: Config.Channel, config: Config.Feed) {
         val meta = HtmlParser.parse(entry.link)
-        
+
         try {
             notifyToDiscordWebhook(feed, entry, meta, channel.discordWebhookUrl, config.name, config.avatarUrl)
         } catch (e: ClientRequestException) {
@@ -117,53 +117,55 @@ object FeedNotifier {
     }
 
     private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, meta: HtmlParser.Result?, webhookUrl: String, name: String?, avatarUrl: String?) {
-        FeedchimeHttpClient.post<Unit>(webhookUrl) {
-            contentType(ContentType.Application.Json)
+        FeedchimeHttpClient.use { client->
+            client.post<Unit>(webhookUrl) {
+                contentType(ContentType.Application.Json)
 
-            body = DiscordWebhookMessage(
-                username = name ?: feed.title,
-                avatarUrl = avatarUrl ?: feed.image?.url ?: meta?.faviconUrl,
-                embeds = listOf(
-                    DiscordEmbed(
-                        title = entry.titleEx.let {
-                            Jsoup.parse(it.value).text()
-                        },
-                        description = entry.description?.let {
-                            Jsoup.parse(it.value).text()
-                        }.orEmpty().ifBlank {
-                            meta?.description
-                        },
-                        fields = buildList { 
-                            if (entry.categories.isNotEmpty()) {
-                                this += DiscordEmbed.Field(
-                                    name = "カテゴリ",
-                                    value = entry.categories.joinToString(", ") { it.name }
+                body = DiscordWebhookMessage(
+                    username = name ?: feed.title,
+                    avatarUrl = avatarUrl ?: feed.image?.url ?: meta?.faviconUrl,
+                    embeds = listOf(
+                        DiscordEmbed(
+                            title = entry.titleEx.let {
+                                Jsoup.parse(it.value).text()
+                            },
+                            description = entry.description?.let {
+                                Jsoup.parse(it.value).text()
+                            }.orEmpty().ifBlank {
+                                meta?.description
+                            },
+                            fields = buildList {
+                                if (entry.categories.isNotEmpty()) {
+                                    this += DiscordEmbed.Field(
+                                        name = "カテゴリ",
+                                        value = entry.categories.joinToString(", ") { it.name }
+                                    )
+                                }
+                            },
+                            url = entry.link,
+                            author = entry.authors.firstOrNull()?.let {
+                                DiscordEmbed.Author(
+                                    name = it.name,
+                                    url = it.uri
                                 )
-                            }
-                        },
-                        url = entry.link,
-                        author = entry.authors.firstOrNull()?.let {
-                            DiscordEmbed.Author(
-                                name = it.name,
-                                url = it.uri
-                            )
-                        },
-                        image = meta?.thumbnailUrl?.let {
-                            DiscordEmbed.Image(
-                                url = it
-                            )
-                        },
-                        thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
-                            DiscordEmbed.Thumbnail(
-                                url = it.getAttributeValue("url"),
-                                height = it.getAttributeValue("height")?.toIntOrNull(),
-                                width = it.getAttributeValue("width")?.toIntOrNull()
-                            )
-                        },
-                        timestamp = (entry.updatedDate ?: entry.publishedDate)?.toInstant()?.atOffset(ZoneOffset.UTC)?.toZonedDateTime()
+                            },
+                            image = meta?.thumbnailUrl?.let {
+                                DiscordEmbed.Image(
+                                    url = it
+                                )
+                            },
+                            thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
+                                DiscordEmbed.Thumbnail(
+                                    url = it.getAttributeValue("url"),
+                                    height = it.getAttributeValue("height")?.toIntOrNull(),
+                                    width = it.getAttributeValue("width")?.toIntOrNull()
+                                )
+                            },
+                            timestamp = (entry.updatedDate ?: entry.publishedDate)?.toInstant()?.atOffset(ZoneOffset.UTC)?.toZonedDateTime()
+                        )
                     )
                 )
-            )
+            }
         }
     }
 }

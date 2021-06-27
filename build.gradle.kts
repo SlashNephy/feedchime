@@ -1,27 +1,27 @@
 plugins {
-    kotlin("jvm") version "1.4.30"
-    kotlin("plugin.serialization") version "1.4.30"
-    id("com.github.johnrengelman.shadow") version "6.1.0"
+    kotlin("jvm") version "1.5.20"
+    kotlin("plugin.serialization") version "1.5.20"
+    id("com.github.johnrengelman.shadow") version "7.0.0"
 
-    id("org.jlleitschuh.gradle.ktlint") version "10.0.0"
+    id("org.jlleitschuh.gradle.ktlint") version "10.1.0"
     id("com.adarshr.test-logger") version "2.1.1"
     id("net.rdrei.android.buildtimetracker") version "0.11.0"
 }
 
 object Versions {
-    const val Ktor = "1.5.2"
+    const val Ktor = "1.6.0"
     const val Rome = "1.15.0"
     const val Jsoup = "1.13.1"
-    const val kaml = "0.28.3"
+    const val kaml = "0.34.0"
 
-    const val Exposed = "0.29.1"
+    const val Exposed = "0.32.1"
     const val SQLiteJDBC = "3.30.1"
 
-    const val KotlinLogging = "2.0.4"
+    const val KotlinLogging = "2.0.8"
     const val Logback = "1.2.3"
-    const val jansi = "1.18"
+    const val jansi = "2.3.3"
 
-    const val JUnit = "5.7.0"
+    const val JUnit = "5.7.2"
 }
 
 object Libraries {
@@ -52,9 +52,6 @@ object Libraries {
 
 repositories {
     mavenCentral()
-
-    // for exposed
-    jcenter()
 }
 
 dependencies {
@@ -82,9 +79,9 @@ kotlin {
     target {
         compilations.all {
             kotlinOptions {
-                jvmTarget = JavaVersion.VERSION_1_8.toString()
-                apiVersion = "1.4"
-                languageVersion = "1.4"
+                jvmTarget = JavaVersion.VERSION_11.toString()
+                apiVersion = "1.5"
+                languageVersion = "1.5"
                 allWarningsAsErrors = true
                 verbose = true
             }

@@ -10,7 +10,7 @@ object FeedParser {
     private val input = SyndFeedInput()
 
     suspend fun parse(url: String): SyndFeed {
-        val content = FeedchimeHttpClient.get<String>(url)
+        val content = FeedchimeHttpClient.use { client-> client.get<String>(url) }
         val source = InputSource(StringReader(content))
 
         return input.build(source)
