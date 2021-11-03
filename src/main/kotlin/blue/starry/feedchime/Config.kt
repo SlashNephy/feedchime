@@ -1,7 +1,6 @@
 package blue.starry.feedchime
 
 import com.charleskorn.kaml.Yaml
-import com.rometools.rome.feed.atom.Feed
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import java.nio.file.Paths
