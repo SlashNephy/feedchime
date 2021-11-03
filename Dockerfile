@@ -25,5 +25,6 @@ FROM adoptopenjdk:11-jre-hotspot
 
 COPY --from=build /app/build/libs/feedchime-all.jar /app/feedchime.jar
 
+LABEL org.opencontainers.image.source="https://github.com/SlashNephy/feedchime"
 WORKDIR /app
 ENTRYPOINT ["java", "-jar", "/app/feedchime.jar"]
