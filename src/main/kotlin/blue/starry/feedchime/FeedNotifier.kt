@@ -110,20 +110,20 @@ object FeedNotifier {
         val meta = HtmlParser.parse(entry.link)
 
         try {
-            notifyToDiscordWebhook(feed, entry, meta, channel.discordWebhookUrl, config.name, config.avatarUrl)
+            notifyToDiscordWebhook(feed, entry, meta, channel.discordWebhookUrl, config)
         } catch (e: ClientRequestException) {
             logger.error(e) { "Failed to send webhook. ($config)\nEntry = $entry" }
         }
     }
 
-    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, meta: HtmlParser.Result?, webhookUrl: String, name: String?, avatarUrl: String?) {
+    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, meta: HtmlParser.Result?, webhookUrl: String, config: Config.Feed) {
         FeedchimeHttpClient.use { client->
             client.post<Unit>(webhookUrl) {
                 contentType(ContentType.Application.Json)
 
                 body = DiscordWebhookMessage(
-                    username = name ?: feed.title,
-                    avatarUrl = avatarUrl ?: feed.image?.url ?: meta?.faviconUrl,
+                    username = config.name ?: feed.title,
+                    avatarUrl = config.avatarUrl ?: feed.image?.url ?: meta?.faviconUrl,
                     embeds = listOf(
                         DiscordEmbed(
                             title = entry.titleEx.let {
@@ -139,6 +139,20 @@ object FeedNotifier {
                                     this += DiscordEmbed.Field(
                                         name = "カテゴリ",
                                         value = entry.categories.joinToString(", ") { it.name }
+                                    )
+                                }
+
+                                if (Config.Feed.Extension.HatenaBookmark in config.extensions) {
+                                    val commentListUrl = entry.foreignMarkup.first { it.qualifiedName == "hatena:bookmarkCommentListPageUrl" }
+                                    val bookmarkCount = entry.foreignMarkup.first { it.qualifiedName == "hatena:bookmarkcount" }
+
+                                    this += DiscordEmbed.Field(
+                                        name = "コメント URL",
+                                        value = commentListUrl.value
+                                    )
+                                    this += DiscordEmbed.Field(
+                                        name = "ブックマーク数",
+                                        value = bookmarkCount.value
                                     )
                                 }
                             },
