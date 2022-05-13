@@ -35,6 +35,7 @@ data class DiscordEmbed(
     val fields: List<Field> = emptyList()
 ) {
     @Serializable
+    @Suppress("unused")
     enum class Type {
         @SerialName("rich") Rich,
         @SerialName("image") Image,

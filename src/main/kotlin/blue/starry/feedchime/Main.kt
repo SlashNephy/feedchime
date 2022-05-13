@@ -2,7 +2,7 @@ package blue.starry.feedchime
 
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
-import kotlin.time.seconds
+import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.createFeedchimeLogger("feedchime")
 

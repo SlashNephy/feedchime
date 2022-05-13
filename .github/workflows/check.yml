@@ -28,8 +28,8 @@ jobs:
       - name: Setup JDK
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: 8
+          distribution: 'corretto'
+          java-version: 17
 
       - name: Grant Execute Permission to gradlew
         run: chmod +x gradlew
