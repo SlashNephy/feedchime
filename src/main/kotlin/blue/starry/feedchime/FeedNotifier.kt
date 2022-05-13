@@ -2,8 +2,11 @@ package blue.starry.feedchime
 
 import com.rometools.rome.feed.synd.SyndEntry
 import com.rometools.rome.feed.synd.SyndFeed
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.features.ClientRequestException
+import io.ktor.client.request.post
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -25,116 +28,158 @@ object FeedNotifier {
 
     private val logger = KotlinLogging.createFeedchimeLogger("feedchime.notifier")
 
-    suspend fun check(feeds: List<Config.Feed>) = coroutineScope {
-        feeds.map {
+    suspend fun check(channels: List<Config.Channel>) = coroutineScope {
+        channels.flatMap { channel ->
+            channel.feeds.map { channel to it }
+        }.map { (channel, feed) ->
             launch {
-                checkEach(it)
+                checkEach(channel, feed)
             }
         }.joinAll()
     }
 
-    private suspend fun checkEach(config: Config.Feed) {
-        val lastUri = transaction(FeedchimeDatabase) {
-            RssFeedHistories.select { RssFeedHistories.url eq config.url }.firstOrNull()?.get(RssFeedHistories.uri)
+    private suspend fun checkEach(channel: Config.Channel, config: Config.Feed) {
+        val (lastArticleUrl, lastArticleTime) = transaction(FeedchimeDatabase) {
+            RssFeedHistories.select { RssFeedHistories.feedUrl eq config.url }.firstOrNull().let {
+                it?.get(RssFeedHistories.articleUrl) to it?.get(RssFeedHistories.articleTime)
+            }
         }
-        var newUri = ""
+        var newArticleUrl: String? = null
+        var newArticleTime: Long? = null
 
-        val feed = FeedParser.parse(config.url)
+        val feed = try {
+            FeedParser.parse(config.url)
+        } catch (e: CancellationException) {
+            return
+        } catch (e: Throwable) {
+            logger.error(e) { "Failed to parse feed ($config)" }
+            return
+        }
+
         feed.entries.asSequence()
             // require title and uri field
             .filter { it.title != null }
             .filter { it.uri != null }
-            // check last link
-            .takeWhile { it.uri != lastUri }
+            // check lastArticleUrl, newArticleTime
+            .takeWhile { lastArticleUrl == null || it.uri != lastArticleUrl }
+            .takeWhile { lastArticleTime == null || it.publishedDate.time > lastArticleTime }
             // limit items
             .take(FeedchimeConfig.limit)
             .forEachIndexed { i, entry ->
                 logger.trace { entry }
 
-                // only notify when lastLink is present and check filter
-                if (lastUri != null
-                    && config.filter.titles.any { it in entry.title }
+                // only notify when lastArticleUrl is present, and check filter
+                if (lastArticleUrl != null
+                    && config.filter.titles.none { it !in entry.title }
                     && config.filter.ignoreTitles.none { it in entry.title }
                 ) {
-                    notify(feed, entry, config)
+                    notify(feed, entry, channel, config)
                 }
 
-                // save first uri
+                // save as newArticleUrl, newArticleTime
                 if (i == 0) {
-                    newUri = entry.uri
+                    newArticleUrl = entry.uri
+                    newArticleTime = entry.publishedDate?.time
                 }
             }
 
-        // skip updating if new uri is null
-        if (newUri.isEmpty()) {
+        // skip updating if newArticleUrl or newArticleTime is default
+        if (newArticleUrl.isNullOrEmpty() || newArticleTime == null) {
             return
         }
 
         transaction(FeedchimeDatabase) {
             // update if exists
-            if (lastUri != null) {
-                RssFeedHistories.update({ RssFeedHistories.url eq config.url }) {
-                    it[uri] = newUri
+            if (lastArticleUrl != null) {
+                RssFeedHistories.update({ RssFeedHistories.feedUrl eq config.url }) {
+                    it[articleUrl] = newArticleUrl!!
+                    it[articleTime] = newArticleTime!!
                 }
             // insert if not exists
             } else {
                 RssFeedHistories.insert {
-                    it[url] = config.url
-                    it[uri] = newUri
+                    it[feedUrl] = config.url
+                    it[articleUrl] = newArticleUrl!!
+                    it[articleTime] = newArticleTime!!
                 }
             }
         }
     }
 
-    private suspend fun notify(feed: SyndFeed, entry: SyndEntry, config: Config.Feed) {
-        if (config.discordWebhookUrl != null) {
-            notifyToDiscordWebhook(feed, entry, config.discordWebhookUrl)
+    private suspend fun notify(feed: SyndFeed, entry: SyndEntry, channel: Config.Channel, config: Config.Feed) {
+        val meta = HtmlParser.parse(entry.link)
+
+        try {
+            notifyToDiscordWebhook(feed, entry, meta, channel.discordWebhookUrl, config)
+        } catch (e: ClientRequestException) {
+            logger.error(e) { "Failed to send webhook. ($config)\nEntry = $entry" }
         }
     }
 
-    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, webhookUrl: String) {
-        FeedchimeHttpClient.post<Unit>(webhookUrl) {
-            contentType(ContentType.Application.Json)
+    private suspend fun notifyToDiscordWebhook(feed: SyndFeed, entry: SyndEntry, meta: HtmlParser.Result?, webhookUrl: String, config: Config.Feed) {
+        FeedchimeHttpClient.use { client->
+            client.post<Unit>(webhookUrl) {
+                contentType(ContentType.Application.Json)
 
-            body = DiscordWebhookMessage(
-                embeds = listOf(
-                    DiscordEmbed(
-                        title = entry.titleEx.let {
-                            if (it.type == "html") {
+                body = DiscordWebhookMessage(
+                    username = config.name ?: feed.title,
+                    avatarUrl = config.avatarUrl ?: feed.image?.url ?: meta?.faviconUrl,
+                    embeds = listOf(
+                        DiscordEmbed(
+                            title = entry.titleEx.let {
                                 Jsoup.parse(it.value).text()
-                            } else {
-                                it.value
-                            }
-                        },
-                        description = entry.contents.plus(entry.description).filterNotNull().joinToString("\n") {
-                            if (it.type == "html") {
+                            },
+                            description = entry.description?.let {
                                 Jsoup.parse(it.value).text()
-                            } else {
-                                it.value
-                            }
-                        },
-                        url = entry.link,
-                        author = entry.authors.firstOrNull()?.let {
-                            DiscordEmbed.Author(
-                                name = it.name,
-                                url = it.uri
-                            )
-                        },
-                        footer = DiscordEmbed.Footer(
-                            text = feed.title,
-                            iconUrl = feed.image?.url
-                        ),
-                        thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
-                            DiscordEmbed.Thumbnail(
-                                url = it.getAttributeValue("url"),
-                                height = it.getAttributeValue("height")?.toIntOrNull(),
-                                width = it.getAttributeValue("width")?.toIntOrNull()
-                            )
-                        },
-                        timestamp = (entry.updatedDate ?: entry.publishedDate)?.toInstant()?.atOffset(ZoneOffset.UTC)?.toZonedDateTime()
+                            }.orEmpty().ifBlank {
+                                meta?.description
+                            },
+                            fields = buildList {
+                                if (entry.categories.isNotEmpty()) {
+                                    this += DiscordEmbed.Field(
+                                        name = "カテゴリ",
+                                        value = entry.categories.joinToString(", ") { it.name }
+                                    )
+                                }
+
+                                if (Config.Feed.Extension.HatenaBookmark in config.extensions) {
+                                    val commentListUrl = entry.foreignMarkup.first { it.qualifiedName == "hatena:bookmarkCommentListPageUrl" }
+                                    val bookmarkCount = entry.foreignMarkup.first { it.qualifiedName == "hatena:bookmarkcount" }
+
+                                    this += DiscordEmbed.Field(
+                                        name = "コメント URL",
+                                        value = commentListUrl.value
+                                    )
+                                    this += DiscordEmbed.Field(
+                                        name = "ブックマーク数",
+                                        value = bookmarkCount.value
+                                    )
+                                }
+                            },
+                            url = entry.link,
+                            author = entry.authors.firstOrNull()?.let {
+                                DiscordEmbed.Author(
+                                    name = it.name,
+                                    url = it.uri
+                                )
+                            },
+                            image = meta?.thumbnailUrl?.let {
+                                DiscordEmbed.Image(
+                                    url = it
+                                )
+                            },
+                            thumbnail = entry.foreignMarkup.find { it.qualifiedName == "media:thumbnail" }?.let {
+                                DiscordEmbed.Thumbnail(
+                                    url = it.getAttributeValue("url"),
+                                    height = it.getAttributeValue("height")?.toIntOrNull(),
+                                    width = it.getAttributeValue("width")?.toIntOrNull()
+                                )
+                            },
+                            timestamp = (entry.updatedDate ?: entry.publishedDate)?.toInstant()?.atOffset(ZoneOffset.UTC)?.toZonedDateTime()
+                        )
                     )
                 )
-            )
+            }
         }
     }
 }

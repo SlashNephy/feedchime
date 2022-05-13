@@ -3,6 +3,7 @@ package blue.starry.feedchime
 import org.jetbrains.exposed.sql.Table
 
 object RssFeedHistories: Table() {
-    val url = varchar("url", 256)
-    val uri = varchar("guid", 256)
+    val feedUrl = varchar("feed_url", 256)
+    val articleUrl = varchar("article_url", 256)
+    val articleTime = long("article_time")
 }

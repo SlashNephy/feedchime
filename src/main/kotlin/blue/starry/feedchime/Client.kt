@@ -11,17 +11,18 @@ import java.sql.Connection
 
 val FeedchimeConfig = Config.load()
 
-val FeedchimeHttpClient by lazy {
-    HttpClient {
+val FeedchimeHttpClient: HttpClient
+    get() = HttpClient {
         install(JsonFeature) {
             serializer = KotlinxSerializer()
         }
 
         defaultRequest {
-            userAgent("feedchime (+https://github.com/SlashNephy/feedchime)")
+            userAgent(FeedchimeConfig.userAgent)
         }
+
+        followRedirects = true
     }
-}
 
 val FeedchimeDatabase by lazy {
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
