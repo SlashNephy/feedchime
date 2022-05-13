@@ -2,7 +2,7 @@ package blue.starry.feedchime
 
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 suspend fun main() {
     val logger = KotlinLogging.createFeedchimeLogger("feedchime")
@@ -19,7 +19,7 @@ suspend fun main() {
     while (true) {
         FeedNotifier.check(FeedchimeConfig.channels)
 
-        logger.trace { "Sleep ${Duration.seconds(FeedchimeConfig.interval)}." }
-        delay(Duration.seconds(FeedchimeConfig.interval))
+        logger.trace { "Sleep ${FeedchimeConfig.interval.seconds}." }
+        delay(FeedchimeConfig.interval.seconds)
     }
 }

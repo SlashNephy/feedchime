@@ -2,7 +2,7 @@
 
 🔔 Simple RSS feed notifier which supports Discord Webhook
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.5-blue)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.6-blue)](https://kotlinlang.org)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/SlashNephy/feedchime)](https://github.com/SlashNephy/feedchime/releases)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/SlashNephy/feedchime/Docker)](https://hub.docker.com/r/slashnephy/feedchime)
 [![license](https://img.shields.io/github/license/SlashNephy/feedchime)](https://github.com/SlashNephy/feedchime/blob/master/LICENSE)
@@ -13,7 +13,7 @@
 
 ## Requirements
 
-- Java 11 or later
+- Java 17 or later
 
 ## Get Started
 
