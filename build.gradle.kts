@@ -13,7 +13,7 @@ dependencies {
     implementation("io.ktor:ktor-client-serialization:1.6.8")
     implementation("com.rometools:rome:1.18.0")
     implementation("org.jsoup:jsoup:1.15.1")
-    implementation("com.charleskorn.kaml:kaml:0.45.0")
+    implementation("com.charleskorn.kaml:kaml:0.46.0")
 
     implementation("org.jetbrains.exposed:exposed-jdbc:0.38.2")
     implementation("org.jetbrains.exposed:exposed-java-time:0.38.2")
