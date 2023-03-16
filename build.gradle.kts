@@ -19,7 +19,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:0.38.2")
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
 
-    implementation("io.github.microutils:kotlin-logging:2.1.23")
+    implementation("io.github.microutils:kotlin-logging:3.0.5")
     implementation("ch.qos.logback:logback-classic:1.2.11")
 }
 
