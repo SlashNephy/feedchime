@@ -15,7 +15,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.15.2")
     implementation("com.charleskorn.kaml:kaml:0.46.0")
 
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.38.2")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.55.0")
     implementation("org.jetbrains.exposed:exposed-java-time:0.38.2")
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
 
