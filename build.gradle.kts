@@ -9,8 +9,8 @@ repositories {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-client-cio:1.6.8")
-    implementation("io.ktor:ktor-client-serialization:1.6.8")
+    implementation("io.ktor:ktor-client-cio:3.0.0")
+    implementation("io.ktor:ktor-client-serialization:3.0.0")
     implementation("com.rometools:rome:1.18.0")
     implementation("org.jsoup:jsoup:1.15.2")
     implementation("com.charleskorn.kaml:kaml:0.46.0")
